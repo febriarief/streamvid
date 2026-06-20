@@ -1,0 +1,96 @@
+<section class="flex min-h-screen items-center justify-center overflow-hidden bg-white px-4 py-10 text-gray-900 dark:bg-[#030712] dark:text-white">
+  <div
+    class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.18),transparent_30%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.22),transparent_25%)]"
+    aria-hidden="true"
+  ></div>
+
+  <div class="relative z-10 w-full max-w-md">
+    <div class="mb-8 text-center">
+      <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-100 p-3 shadow-[0_0_40px_rgba(6,182,212,0.2)] backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+        <img src="branding/logo.png" alt="StreamVid" class="h-full w-full object-contain" />
+      </div>
+      <p class="text-sm font-medium uppercase tracking-[0.35em] text-cyan-600 dark:text-cyan-400">StreamVid</p>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">Masuk ke akun Anda</h1>
+      <p class="mt-2 text-sm text-gray-600 dark:text-zinc-400">Akses pengalaman streaming premium dan dashboard yang aman.</p>
+    </div>
+
+    <div class="rounded-xl border border-zinc-200/80 bg-zinc-50 p-6 shadow-[0_8px_24px_rgba(15,23,42,0.12)] backdrop-blur dark:border-white/10 dark:bg-zinc-900 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)] sm:p-8">
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5" novalidate>
+        <div class="space-y-2">
+          <label for="email" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Email</label>
+          <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-gray-400 dark:text-zinc-500">
+              <svg lucideMail class="h-4 w-4" aria-hidden="true"></svg>
+            </span>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="name@example.com"
+              class="w-full rounded-xl border border-zinc-300 bg-white py-3 pr-4 pl-11 text-sm text-gray-900 outline-none transition duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] placeholder:text-gray-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 dark:focus:border-cyan-400"
+            />
+          </div>
+          @if (emailError()) {
+            <p class="text-sm text-red-600 dark:text-red-400">{{ emailError() }}</p>
+          }
+        </div>
+
+        <div class="space-y-2">
+          <label for="password" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Password</label>
+          <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-gray-400 dark:text-zinc-500">
+              <svg lucideLockKeyhole class="h-4 w-4" aria-hidden="true"></svg>
+            </span>
+            <input
+              id="password"
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="Minimal 8 karakter"
+              class="w-full rounded-xl border border-zinc-300 bg-white py-3 pr-16 pl-11 text-sm text-gray-900 outline-none transition duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] placeholder:text-gray-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 dark:focus:border-cyan-400"
+            />
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute inset-y-1 right-1 inline-flex items-center gap-2 rounded-lg px-3 text-sm font-medium text-zinc-500 transition hover:text-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 dark:text-zinc-400 dark:hover:text-cyan-400"
+              [attr.aria-label]="hidePassword() ? 'Tampilkan password' : 'Sembunyikan password'"
+            >
+              @if (hidePassword()) {
+                <svg lucideEye class="h-4 w-4" aria-hidden="true"></svg>
+              } @else {
+                <svg lucideEyeOff class="h-4 w-4" aria-hidden="true"></svg>
+              }
+              <span>{{ hidePassword() ? 'Show' : 'Hide' }}</span>
+            </button>
+          </div>
+          @if (passwordError()) {
+            <p class="text-sm text-red-600 dark:text-red-400">{{ passwordError() }}</p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="form.invalid || isLoading()"
+          class="flex w-full items-center justify-center rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (isLoading()) {
+            <span class="flex items-center gap-2">
+              <svg lucideLoaderCircle class="h-4 w-4 animate-spin" aria-hidden="true"></svg>
+              <span>Memproses...</span>
+            </span>
+          } @else {
+            <span class="flex items-center gap-2">
+              <svg lucideLogIn class="h-4 w-4" aria-hidden="true"></svg>
+              <span>Login</span>
+            </span>
+          }
+        </button>
+
+        @if (authError()) {
+          <p class="text-center text-sm text-red-600 dark:text-red-400">{{ authError() }}</p>
+        }
+      </form>
+    </div>
+  </div>
+</section>

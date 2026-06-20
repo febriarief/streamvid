@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum VideoStatus {
+  DRAFT
+  PUBLISHED
+  UNLISTED
+  ARCHIVED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  avatar       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  views View[]
+
+  @@map("users")
+}
+
+model Video {
+  id           String      @id @default(uuid())
+  title        String
+  description  String?
+  slug         String      @unique
+  doodFileId   String      @unique
+  doodUrl      String
+  embedUrl     String
+  thumbnailUrl String?
+  duration     Int?
+  fileSize     BigInt?
+  status       VideoStatus @default(DRAFT)
+  viewCount    Int         @default(0)
+  categoryId   String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  category Category? @relation(fields: [categoryId], references: [id])
+  tags     Tag[]
+  views    View[]
+
+  @@map("videos")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  videos Video[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  videos Video[]
+
+  @@map("tags")
+}
+
+model View {
+  id        String   @id @default(uuid())
+  videoId   String
+  userId    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id])
+  user  User? @relation(fields: [userId], references: [id])
+
+  @@map("views")
+}

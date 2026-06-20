@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: streamvid_postgres
+    environment:
+      POSTGRES_DB: streamvid
+      POSTGRES_USER: streamvid_user
+      POSTGRES_PASSWORD: streamvid_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - streamvid_network
+
+  backend:
+    build: ./backend
+    container_name: streamvid_backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://streamvid_user:streamvid_pass@postgres:5432/streamvid
+    depends_on:
+      - postgres
+    networks:
+      - streamvid_network
+
+  frontend:
+    build: ./frontend
+    container_name: streamvid_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - streamvid_network
+
+networks:
+  streamvid_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

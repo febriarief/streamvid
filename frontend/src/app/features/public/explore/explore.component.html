@@ -1,0 +1,186 @@
+<section class="space-y-6">
+  <div class="rounded-[28px] border border-zinc-800 bg-zinc-900/90 p-5 shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+    <div class="space-y-2">
+      <p class="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300/80">Discover</p>
+      <h1 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Explore</h1>
+      <p class="max-w-2xl text-sm leading-6 text-zinc-400">
+        Temukan video terbaru, telusuri kategori favorit, dan urutkan katalog StreamVid sesuai cara kamu menonton.
+      </p>
+    </div>
+
+    <div class="mt-5 grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_220px_220px]">
+      <form (ngSubmit)="onSearchSubmit()" class="relative">
+        <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-500">
+          <svg lucideSearch class="h-4 w-4" aria-hidden="true"></svg>
+        </span>
+        <input
+          type="search"
+          [formControl]="searchControl"
+          placeholder="Cari video, topik, atau judul"
+          class="h-12 w-full rounded-2xl border border-zinc-700 bg-gray-950 px-12 pr-24 text-sm text-white outline-none transition duration-150 placeholder:text-zinc-500 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-500/20"
+        />
+        <button
+          type="submit"
+          class="absolute inset-y-1.5 right-1.5 inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-violet-600 via-blue-500 to-cyan-500 px-4 text-sm font-medium text-white transition duration-150 hover:brightness-110"
+        >
+          Cari
+        </button>
+      </form>
+
+      <label class="block">
+        <span class="sr-only">Filter kategori</span>
+        <select
+          [value]="selectedCategory() ?? ''"
+          (change)="onCategoryChange($any($event.target).value)"
+          class="h-12 w-full cursor-pointer rounded-2xl border border-zinc-700 bg-gray-950 px-4 text-sm text-white outline-none transition duration-150 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-500/20"
+        >
+          <option value="">Semua kategori</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="block">
+        <span class="sr-only">Urutkan video</span>
+        <select
+          [value]="sortBy()"
+          (change)="onSortChange($any($event.target).value)"
+          class="h-12 w-full cursor-pointer rounded-2xl border border-zinc-700 bg-gray-950 px-4 text-sm text-white outline-none transition duration-150 focus:border-violet-400/60 focus:ring-2 focus:ring-violet-500/20"
+        >
+          @for (option of sortOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  @if (listError()) {
+    <div class="rounded-3xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-200">
+      {{ listError() }}
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+      @for (skeleton of readonlySkeletons; track skeleton) {
+        <div class="animate-pulse rounded-3xl border border-zinc-800 bg-zinc-900 p-3 shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+          <div class="aspect-video rounded-2xl bg-zinc-800"></div>
+          <div class="mt-4 h-4 rounded-full bg-zinc-800"></div>
+          <div class="mt-3 h-4 w-4/5 rounded-full bg-zinc-800"></div>
+          <div class="mt-4 h-3 w-24 rounded-full bg-zinc-800"></div>
+          <div class="mt-3 h-3 w-2/3 rounded-full bg-zinc-800"></div>
+        </div>
+      }
+    </div>
+  } @else if (hasVideos()) {
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+      @for (video of videos(); track video.id) {
+        <a
+          [routerLink]="['/video', video.slug]"
+          class="group block cursor-pointer rounded-3xl border border-zinc-800 bg-zinc-900 p-3 shadow-[0_8px_24px_rgba(0,0,0,.35)] transition duration-250 hover:-translate-y-1 hover:border-cyan-400/40 hover:shadow-[0_16px_48px_rgba(3,7,18,0.7)]"
+        >
+          <div class="relative overflow-hidden rounded-2xl">
+            <img
+              [src]="video.thumbnailUrl || 'https://placehold.co/640x360/18181b/f9fafb?text=StreamVid'"
+              [alt]="video.title"
+              class="aspect-video w-full object-cover transition duration-400 group-hover:scale-[1.03]"
+            />
+            <div class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/45 via-transparent to-transparent"></div>
+            <span class="absolute bottom-3 right-3 rounded-lg bg-black/80 px-2 py-1 text-[11px] font-semibold tracking-wide text-white">
+              {{ formatDuration(video.duration) }}
+            </span>
+          </div>
+
+          <div class="mt-4 space-y-2">
+            <h2 class="line-clamp-2 min-h-12 text-sm font-semibold text-gray-100 transition duration-150 group-hover:text-cyan-300">
+              {{ video.title }}
+            </h2>
+            <p class="text-xs font-medium uppercase tracking-[0.18em] text-cyan-300">
+              {{ video.category?.name || 'Tanpa kategori' }}
+            </p>
+            <p class="text-sm text-gray-400">
+              {{ formatViews(video.viewCount) }} views •
+              {{ video.createdAt | date: 'd MMM y' : '' : 'id-ID' }}
+            </p>
+          </div>
+        </a>
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="flex flex-col gap-4 rounded-3xl border border-zinc-800 bg-zinc-900 px-4 py-4 shadow-[0_8px_24px_rgba(0,0,0,.35)] sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-400">
+          Menampilkan {{ videos().length }} dari {{ totalItems() }} video
+        </p>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            (click)="goToPage(currentPage() - 1)"
+            [disabled]="currentPage() === 1"
+            class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-800 bg-gray-950 text-zinc-300 transition duration-150 hover:border-cyan-400/40 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Halaman sebelumnya"
+          >
+            <svg lucideChevronLeft class="h-4 w-4" aria-hidden="true"></svg>
+          </button>
+
+          @for (page of visiblePages(); track page) {
+            <button
+              type="button"
+              (click)="goToPage(page)"
+              class="inline-flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-medium transition duration-150"
+              [class]="page === currentPage()
+                ? 'border-cyan-400/30 bg-cyan-500 text-slate-950'
+                : 'border-zinc-800 bg-gray-950 text-zinc-300 hover:border-cyan-400/40 hover:text-cyan-300'"
+            >
+              {{ page }}
+            </button>
+          }
+
+          <button
+            type="button"
+            (click)="goToPage(currentPage() + 1)"
+            [disabled]="currentPage() === totalPages()"
+            class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-800 bg-gray-950 text-zinc-300 transition duration-150 hover:border-cyan-400/40 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Halaman berikutnya"
+          >
+            <svg lucideChevronRight class="h-4 w-4" aria-hidden="true"></svg>
+          </button>
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="mx-auto max-w-md rounded-[32px] border border-zinc-800 bg-zinc-900 px-6 py-8 text-center shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+      <img
+        [src]="emptyStateImage()"
+        alt="Tidak ada video ditemukan"
+        class="mx-auto w-full max-w-[240px] object-contain"
+      />
+
+      <h2 class="mt-5 text-[28px] font-semibold leading-tight text-white">
+        Tidak ada video ditemukan
+      </h2>
+      <p class="mt-3 text-sm leading-7 text-zinc-400">
+        Coba ubah kata kunci, pilih kategori lain, atau reset filter untuk melihat katalog StreamVid yang tersedia.
+      </p>
+
+      <div class="mt-8 space-y-3">
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-violet-600 to-violet-500 px-4 py-3 text-sm font-medium text-white transition duration-150 hover:brightness-110"
+        >
+          Reset Filter
+        </button>
+        <a
+          routerLink="/"
+          class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-zinc-700 bg-transparent px-4 py-3 text-sm font-medium text-zinc-200 transition duration-150 hover:border-zinc-500 hover:text-white"
+        >
+          Kembali ke Beranda
+        </a>
+      </div>
+    </div>
+  }
+</section>

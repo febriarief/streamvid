@@ -1,0 +1,161 @@
+<section class="space-y-6">
+  <div class="rounded-[28px] border border-zinc-200/70 bg-white/90 px-6 py-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-linear-to-br dark:from-zinc-900/88 dark:via-zinc-900 dark:to-zinc-950 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)] sm:px-7">
+    <p class="text-xs font-medium uppercase tracking-[0.28em] text-cyan-500 dark:text-cyan-400">Account Center</p>
+    <h1 class="mt-3 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Profile Saya</h1>
+    <p class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-zinc-400">
+      Perbarui identitas akun dan jaga keamanan akses StreamVid Anda dari satu tempat.
+    </p>
+  </div>
+
+  <div class="grid gap-6">
+    <article class="rounded-[24px] border border-zinc-200/70 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+      <div class="border-b border-zinc-200 px-6 py-5 dark:border-zinc-800">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-500 dark:text-cyan-300">
+            <svg lucideUser class="h-5 w-5" aria-hidden="true"></svg>
+          </span>
+          <div>
+            <p class="text-xs font-medium uppercase tracking-[0.24em] text-cyan-500 dark:text-cyan-400">Section 1</p>
+            <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Info Akun</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid gap-5 px-6 py-6 md:grid-cols-2">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-gray-700 dark:text-zinc-200">Email</label>
+          <div class="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-gray-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+            {{ email() }}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-gray-700 dark:text-zinc-200">Role</label>
+          <div class="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+            <span class="inline-flex rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-violet-600 dark:text-violet-300">
+              {{ role() }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="rounded-[24px] border border-zinc-200/70 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+      <div class="border-b border-zinc-200 px-6 py-5 dark:border-zinc-800">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/20 bg-violet-500/10 text-violet-600 dark:text-violet-300">
+            <svg lucideUser class="h-5 w-5" aria-hidden="true"></svg>
+          </span>
+          <div>
+            <p class="text-xs font-medium uppercase tracking-[0.24em] text-violet-500 dark:text-violet-400">Section 2</p>
+            <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Update Profile</h2>
+          </div>
+        </div>
+      </div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-5 px-6 py-6">
+        <div class="space-y-2">
+          <label for="username" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Username</label>
+          <input
+            id="username"
+            type="text"
+            formControlName="username"
+            class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+            placeholder="Masukkan username baru"
+          />
+          @if (usernameError()) {
+            <p class="text-sm text-red-500 dark:text-red-300">{{ usernameError() }}</p>
+          }
+        </div>
+
+        @if (profileSuccess()) {
+          <div class="flex items-start gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+            <svg lucideCheck class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true"></svg>
+            <span>{{ profileSuccess() }}</span>
+          </div>
+        }
+
+        @if (profileError()) {
+          <div class="flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">
+            <svg lucideAlertCircle class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true"></svg>
+            <span>{{ profileError() }}</span>
+          </div>
+        }
+
+        <button
+          type="submit"
+          class="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl bg-linear-to-r from-violet-600 via-blue-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white transition duration-150 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+          [disabled]="isLoadingProfile()"
+        >
+          {{ isLoadingProfile() ? 'Menyimpan...' : 'Simpan Perubahan' }}
+        </button>
+      </form>
+    </article>
+
+    <article class="rounded-[24px] border border-zinc-200/70 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+      <div class="border-b border-zinc-200 px-6 py-5 dark:border-zinc-800">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-500/10 text-amber-600 dark:text-amber-300">
+            <svg lucideLock class="h-5 w-5" aria-hidden="true"></svg>
+          </span>
+          <div>
+            <p class="text-xs font-medium uppercase tracking-[0.24em] text-amber-500 dark:text-amber-400">Section 3</p>
+            <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Ganti Password</h2>
+          </div>
+        </div>
+      </div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-5 px-6 py-6">
+        <div class="space-y-2">
+          <label for="newPassword" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Password Baru</label>
+          <input
+            id="newPassword"
+            type="password"
+            formControlName="newPassword"
+            class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+            placeholder="Masukkan password baru"
+          />
+          @if (newPasswordError()) {
+            <p class="text-sm text-red-500 dark:text-red-300">{{ newPasswordError() }}</p>
+          }
+        </div>
+
+        <div class="space-y-2">
+          <label for="confirmPassword" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Konfirmasi Password Baru</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            formControlName="confirmPassword"
+            class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white"
+            placeholder="Ulangi password baru"
+          />
+          @if (confirmPasswordError()) {
+            <p class="text-sm text-red-500 dark:text-red-300">{{ confirmPasswordError() }}</p>
+          }
+        </div>
+
+        @if (passwordSuccess()) {
+          <div class="flex items-start gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+            <svg lucideCheck class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true"></svg>
+            <span>{{ passwordSuccess() }}</span>
+          </div>
+        }
+
+        @if (passwordError()) {
+          <div class="flex items-start gap-3 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">
+            <svg lucideAlertCircle class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true"></svg>
+            <span>{{ passwordError() }}</span>
+          </div>
+        }
+
+        <button
+          type="submit"
+          class="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700 transition duration-150 hover:bg-amber-500/15 dark:text-amber-200 disabled:cursor-not-allowed disabled:opacity-70"
+          [disabled]="isLoadingPassword()"
+        >
+          {{ isLoadingPassword() ? 'Mengganti Password...' : 'Ganti Password' }}
+        </button>
+      </form>
+    </article>
+  </div>
+</section>

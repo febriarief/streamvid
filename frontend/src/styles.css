@@ -1,0 +1,41 @@
+/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: dark;
+  --sv-primary: #7c3aed;
+  --sv-secondary: #2563eb;
+  --sv-accent: #06b6d4;
+  --sv-bg: #030712;
+  --sv-surface: #18181b;
+  --sv-surface-elevated: #27272a;
+  --sv-text-primary: #f9fafb;
+  --sv-text-secondary: #9ca3af;
+}
+
+html,
+body {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.18), transparent 32%),
+    radial-gradient(circle at right top, rgba(124, 58, 237, 0.24), transparent 28%),
+    linear-gradient(135deg, #030712 0%, #111827 52%, #020617 100%);
+  color: var(--sv-text-primary);
+}
+
+body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+}
+
+:where(
+  a[href],
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [routerLink],
+  summary,
+  label[for]
+) {
+  cursor: pointer;
+}

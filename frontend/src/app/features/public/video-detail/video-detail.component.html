@@ -1,0 +1,160 @@
+@if (isLoading()) {
+  <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_38rem]">
+    <div class="space-y-5 xl:max-w-[1240px]">
+      <div
+        class="animate-pulse overflow-hidden rounded-3xl border border-zinc-200/70 bg-white/80 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]"
+      >
+        <div class="aspect-video w-full bg-zinc-200 dark:bg-zinc-800"></div>
+      </div>
+      <div class="space-y-3 rounded-3xl border border-zinc-200/70 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+        <div class="h-7 w-3/4 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+        <div class="h-4 w-2/3 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+        <div class="h-24 animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-800"></div>
+      </div>
+    </div>
+
+    <aside class="space-y-3 rounded-3xl border border-zinc-200/70 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+      <div class="h-6 w-32 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+
+      @for (skeleton of relatedSkeletons; track skeleton) {
+        <div class="flex animate-pulse gap-3">
+          <div class="aspect-video w-[20rem] shrink-0 rounded-2xl bg-zinc-200 dark:bg-zinc-800"></div>
+          <div class="flex-1 space-y-2 py-1">
+            <div class="h-3.5 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+            <div class="h-3.5 w-5/6 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+            <div class="h-3 w-1/2 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+          </div>
+        </div>
+      }
+    </aside>
+  </section>
+} @else if (notFound()) {
+  <section class="mx-auto max-w-xl rounded-3xl border border-zinc-200/70 bg-white/80 px-6 py-12 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+    <p class="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-600 dark:text-cyan-300">404</p>
+    <h1 class="mt-4 text-3xl font-semibold text-gray-900 dark:text-white">Video tidak ditemukan</h1>
+    <p class="mt-3 text-sm leading-7 text-gray-500 dark:text-zinc-400">
+      Video yang kamu cari mungkin sudah dipindahkan, belum dipublish, atau slug-nya tidak valid.
+    </p>
+    <a
+      routerLink="/"
+      class="mt-8 inline-flex cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-violet-600 via-blue-600 to-cyan-500 px-5 py-3 text-sm font-medium text-white transition duration-150 hover:brightness-110"
+    >
+      Kembali ke beranda
+    </a>
+  </section>
+} @else if (video(); as currentVideo) {
+  <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_38rem]">
+    <div class="space-y-5 xl:max-w-[1240px]">
+      <div class="overflow-hidden rounded-3xl border border-zinc-200/70 bg-white/80 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+        <iframe
+          [src]="safeEmbedUrl()"
+          [title]="currentVideo.title"
+          class="aspect-video w-full rounded-xl"
+          allow="autoplay"
+          allowfullscreen
+        ></iframe>
+      </div>
+
+      <div class="rounded-3xl border border-zinc-200/70 bg-white/80 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)] sm:p-6">
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ currentVideo.title }}</h1>
+
+        <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 text-sm text-gray-500 dark:text-zinc-400">
+          <span class="inline-flex items-center gap-2">
+            <svg lucideEye class="h-4 w-4 text-cyan-500 dark:text-cyan-300" aria-hidden="true"></svg>
+            {{ formatViews(currentVideo.viewCount) }} views
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <svg lucideCalendar class="h-4 w-4 text-cyan-500 dark:text-cyan-300" aria-hidden="true"></svg>
+            {{ currentVideo.createdAt | date: 'd MMM y' : '' : 'id-ID' }}
+          </span>
+          <span
+            class="inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-200"
+          >
+            {{ currentVideo.category?.name || 'Tanpa kategori' }}
+          </span>
+        </div>
+
+        @if (currentVideo.tags.length > 0) {
+          <div class="mt-5 flex flex-wrap gap-2 border-t border-zinc-200/80 pt-5 dark:border-zinc-800">
+            @for (tag of currentVideo.tags; track tag.id) {
+              <span
+                class="inline-flex items-center rounded-full border border-violet-400/20 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-700 dark:text-violet-200"
+              >
+                #{{ tag.name }}
+              </span>
+            }
+          </div>
+        }
+
+        @if (currentVideo.description) {
+          <div class="mt-5 border-t border-zinc-200/80 pt-5 dark:border-zinc-800">
+            <p
+              class="text-sm leading-7 text-gray-600 dark:text-zinc-300"
+              [class.line-clamp-3]="!isDescExpanded()"
+            >
+              {{ currentVideo.description }}
+            </p>
+
+            <button
+              type="button"
+              (click)="toggleDescription()"
+              class="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition duration-150 hover:border-cyan-300 hover:text-cyan-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-cyan-400/40 dark:hover:text-cyan-300"
+            >
+              <span>{{ isDescExpanded() ? 'Sembunyikan' : 'Lihat Selengkapnya' }}</span>
+              @if (isDescExpanded()) {
+                <svg lucideChevronUp class="h-4 w-4" aria-hidden="true"></svg>
+              } @else {
+                <svg lucideChevronDown class="h-4 w-4" aria-hidden="true"></svg>
+              }
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (loadError()) {
+        <div class="rounded-3xl border border-red-200 bg-red-50/90 px-5 py-4 text-sm text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+          {{ loadError() }}
+        </div>
+      }
+    </div>
+
+    <aside class="rounded-3xl border border-zinc-200/70 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/85 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Video Lainnya</h2>
+
+      <div class="mt-4 space-y-3">
+        @for (relatedVideo of relatedVideos(); track relatedVideo.id) {
+          <button
+            type="button"
+            (click)="openRelatedVideo(relatedVideo.slug)"
+            class="group flex w-full cursor-pointer gap-3 rounded-2xl border border-transparent p-1.5 text-left transition duration-150 hover:border-cyan-300/50 hover:bg-zinc-100/80 dark:hover:border-cyan-400/30 dark:hover:bg-zinc-950/80"
+          >
+            <img
+              [src]="relatedVideo.thumbnailUrl || 'https://placehold.co/640x360/18181b/f9fafb?text=StreamVid'"
+              [alt]="relatedVideo.title"
+              class="aspect-video w-[20rem] shrink-0 rounded-xl object-cover"
+            />
+
+            <div class="min-w-0 flex-1 py-0.5">
+              <h3 class="line-clamp-2 text-sm font-semibold leading-6 text-gray-900 transition duration-150 group-hover:text-cyan-700 dark:text-gray-100 dark:group-hover:text-cyan-300">
+                {{ relatedVideo.title }}
+              </h3>
+              <p class="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-cyan-600 dark:text-cyan-300">
+                {{ relatedVideo.category?.name || 'Tanpa kategori' }}
+              </p>
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-zinc-400">
+                {{ formatViews(relatedVideo.viewCount) }} views
+              </p>
+            </div>
+          </button>
+        } @empty {
+          <div class="rounded-2xl border border-dashed border-zinc-200/80 bg-zinc-50/80 px-4 py-6 text-center dark:border-zinc-800 dark:bg-zinc-950/80">
+            <p class="text-sm font-medium text-gray-700 dark:text-zinc-200">Belum ada video terkait</p>
+            <p class="mt-2 text-xs leading-6 text-gray-500 dark:text-zinc-400">
+              Video lain dari kategori yang sama akan muncul di sini.
+            </p>
+          </div>
+        }
+      </div>
+    </aside>
+  </section>
+}
