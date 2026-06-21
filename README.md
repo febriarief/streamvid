@@ -170,10 +170,11 @@ rtk proxy powershell -NoProfile -Command "docker compose up --build"
 
 Catatan Docker:
 
-- Frontend container dipublish ke `http://localhost`
+- Frontend container dibind ke `127.0.0.1:8088` di host
 - Frontend production memanggil API lewat path relatif `/api`
 - Nginx di frontend me-proxy `/api` ke service `backend` di network Docker
 - Service `backend` dan `postgres` tidak dipublish ke host secara default
+- Port `8088` hanya bisa diakses dari host server sendiri dan ditujukan untuk reverse proxy Nginx host
 
 Service PostgreSQL di `docker-compose.yml` memakai konfigurasi default:
 
@@ -238,7 +239,47 @@ URL default:
 
 - Frontend: `http://localhost:4200`
 - Backend API: `http://localhost:3000/api`
-- Docker app: `http://localhost`
+- Docker frontend internal host binding: `http://127.0.0.1:8088`
+
+## Deploy Dengan Nginx Host
+
+Untuk server yang menjalankan banyak container Docker, StreamVid tidak memakai port publik `80` secara langsung. Container frontend dibind ke `127.0.0.1:8088`, lalu Nginx di host server menjadi gateway publik pada port `80` dan `443`.
+
+Contoh alur:
+
+```text
+internet
+  -> nginx host server
+  -> http://127.0.0.1:8088
+  -> streamvid_frontend
+  -> /api diteruskan ke backend:3000 oleh nginx di container frontend
+```
+
+Contoh konfigurasi Nginx host:
+
+```nginx
+server {
+    listen 80;
+    server_name streamvid.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8088;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Aktivasi dasar di Ubuntu:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/streamvid /etc/nginx/sites-enabled/streamvid
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
 ## Catatan Environment Frontend
 

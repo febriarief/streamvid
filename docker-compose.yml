@@ -26,7 +26,7 @@ services:
     build: ./frontend
     container_name: streamvid_frontend
     ports:
-      - "80:80"
+      - "127.0.0.1:8088:80"
     depends_on:
       - backend
     networks:
