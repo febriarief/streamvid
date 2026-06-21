@@ -56,9 +56,15 @@ export interface SaveVideoPayload {
   doodUrl: string;
   title: string;
   description?: string;
+  thumbnailUrl?: string;
   categoryId?: string;
   tags?: string[];
   status: Exclude<VideoStatus, 'ARCHIVED'>;
+}
+
+export interface UploadedThumbnailResponse {
+  fileName: string;
+  url: string;
 }
 
 type ApiEnvelope<T> = T | { data: T; statusCode?: number };
@@ -113,6 +119,15 @@ export class VideoService {
   getCategories(): Observable<Category[]> {
     return this.http
       .get<ApiEnvelope<Category[]>>(`${this.apiUrl}/categories`)
+      .pipe(map((response) => this.unwrap(response)));
+  }
+
+  uploadThumbnail(file: File): Observable<UploadedThumbnailResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http
+      .post<ApiEnvelope<UploadedThumbnailResponse>>(`${this.apiUrl}/admin/videos/thumbnail`, formData)
       .pipe(map((response) => this.unwrap(response)));
   }
 

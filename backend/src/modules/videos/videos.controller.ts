@@ -1,5 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Patch, Body, Param, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import type { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { VideosService } from './videos.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
@@ -9,6 +24,13 @@ import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { VideoStatus } from '../../../generated/prisma/enums';
+
+type UploadedThumbnailFile = {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+  size: number;
+};
 
 // ─── Public routes ────────────────────────────────────────
 @Controller('videos')
@@ -62,6 +84,12 @@ export class VideosAdminController {
   @Post('videos')
   create(@Body() dto: CreateVideoDto) {
     return this.videosService.create(dto);
+  }
+
+  @Post('videos/thumbnail')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadThumbnail(@UploadedFile() file: UploadedThumbnailFile) {
+    return this.videosService.uploadThumbnail(file);
   }
 
   @Put('videos/:id')

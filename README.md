@@ -13,6 +13,7 @@ Konten video tidak di-host langsung oleh aplikasi. Admin menambahkan video dari 
 - Angular SPA dengan standalone components, Signals, NgRx untuk auth, dan Tailwind CSS v4
 - NestJS REST API dengan Prisma dan PostgreSQL
 - Integrasi Doodstream hanya lewat backend agar API key tetap aman
+- Integrasi Backblaze B2 untuk thumbnail custom admin
 - Dual-token auth: access token di memory, refresh token di `httpOnly` cookie
 - Dashboard admin untuk video, kategori, profil, dan overview data
 - Halaman publik tambahan untuk `explore`, `trending`, dan `library`
@@ -28,6 +29,8 @@ NestJS API (/api, localhost:3000 di dev, internal container di Docker)
         +--> PostgreSQL
         |
         +--> Doodstream API
+        |
+        +--> Backblaze B2 (thumbnail custom)
 ```
 
 Prinsip penting:
@@ -96,6 +99,7 @@ Folder utama:
 - Manajemen video
 - Manajemen kategori
 - Profil admin
+- Upload thumbnail custom untuk video admin
 
 ## Auth Flow
 
@@ -132,6 +136,23 @@ Data video yang relevan disimpan di database:
 - `duration`
 - `fileSize`
 - `status`
+
+## Backblaze Thumbnail Flow
+
+Thumbnail default video tetap bisa berasal dari Doodstream, tetapi admin juga bisa mengunggah thumbnail custom.
+
+1. Admin memilih file thumbnail di dashboard video
+2. Frontend mengirim `multipart/form-data` ke `POST /api/admin/videos/thumbnail`
+3. Backend mengunggah file ke Backblaze B2
+4. Backend mengembalikan URL publik file
+5. URL itu dipakai sebagai `thumbnailUrl` saat create atau update video
+
+Catatan:
+
+- Integrasi Backblaze hanya berjalan di backend
+- File yang diterima dibatasi ke JPG, PNG, atau WEBP
+- Batas ukuran thumbnail saat ini adalah 5MB
+- Jika thumbnail custom tidak diisi, video tetap memakai thumbnail dari metadata Doodstream
 
 ## Prasyarat
 
@@ -173,8 +194,10 @@ Catatan Docker:
 - Frontend container dibind ke `127.0.0.1:8088` di host
 - Frontend production memanggil API lewat path relatif `/api`
 - Nginx di frontend me-proxy `/api` ke service `backend` di network Docker
-- Service `backend` dan `postgres` tidak dipublish ke host secara default
+- Service `backend` tidak dipublish ke host secara default
+- Service `postgres` dipublish ke `127.0.0.1:5433` khusus untuk local development backend di host
 - Port `8088` hanya bisa diakses dari host server sendiri dan ditujukan untuk reverse proxy Nginx host
+- Binding `127.0.0.1:5433` tidak mengekspos Postgres ke publik internet dan tidak mengubah koneksi internal antar-container (`postgres:5432`)
 
 Service PostgreSQL di `docker-compose.yml` memakai konfigurasi default:
 
@@ -182,6 +205,7 @@ Service PostgreSQL di `docker-compose.yml` memakai konfigurasi default:
 - user: `streamvid_user`
 - password: `streamvid_pass`
 - host internal Docker: `postgres:5432`
+- host local development: `localhost:5433`
 
 ### 3. Siapkan environment backend
 
@@ -191,6 +215,11 @@ Buat file `backend/.env`:
 DATABASE_URL="postgresql://streamvid_user:streamvid_pass@localhost:5433/streamvid"
 JWT_SECRET="replace-with-a-strong-secret"
 DOODSTREAM_API_KEY="replace-with-your-doodstream-key"
+BACKBLAZE_B2_KEY_ID="replace-with-your-backblaze-key-id"
+BACKBLAZE_B2_APPLICATION_KEY="replace-with-your-backblaze-application-key"
+BACKBLAZE_B2_BUCKET_NAME="replace-with-your-backblaze-bucket-name"
+# Optional when using a CDN or custom public domain:
+# BACKBLAZE_B2_PUBLIC_BASE_URL="https://cdn.example.com"
 PORT=3000
 NODE_ENV=development
 ```
@@ -202,6 +231,8 @@ Catatan:
 - `DATABASE_URL` wajib ada untuk Prisma dan seed
 - `JWT_SECRET` dipakai untuk access token dan refresh token
 - `DOODSTREAM_API_KEY` hanya boleh dipakai di backend
+- `BACKBLAZE_B2_*` hanya dipakai di backend untuk thumbnail custom
+- Jika satu application key bisa mengakses lebih dari satu bucket, isi `BACKBLAZE_B2_BUCKET_NAME` atau `BACKBLAZE_B2_BUCKET_ID` secara eksplisit
 
 ### 4. Jalankan migration dan generate Prisma client
 
@@ -353,6 +384,7 @@ rtk proxy powershell -NoProfile -Command "cd backend; npx prisma studio"
 - `GET /api/admin/stats`
 - `GET /api/admin/videos`
 - `POST /api/admin/videos`
+- `POST /api/admin/videos/thumbnail`
 - `PUT /api/admin/videos/:id`
 - `PATCH /api/admin/videos/:id/status`
 - `DELETE /api/admin/videos/:id`

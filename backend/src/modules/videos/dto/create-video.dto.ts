@@ -13,6 +13,10 @@ export class CreateVideoDto {
   @IsOptional()
   description?: string;
 
+  @IsUrl()
+  @IsOptional()
+  thumbnailUrl?: string;
+
   @IsString()
   @IsOptional()
   categoryId?: string;

@@ -75,6 +75,13 @@ Video tidak di-host di server sendiri. Konten berasal dari **Doodstream**:
 4. Metadata disimpan ke database
 5. Frontend menggunakan `embedUrl` untuk player iframe
 
+Thumbnail custom admin disimpan di **Backblaze B2**:
+
+1. Admin memilih file thumbnail custom
+2. Frontend mengunggah file ke backend
+3. Backend mengunggah file ke Backblaze B2
+4. Backend menyimpan URL publik hasil upload sebagai `thumbnailUrl`
+
 ---
 
 ## 4. Monorepo Structure
@@ -135,6 +142,7 @@ Peran folder:
 |---|---|
 | Database | PostgreSQL 15+ |
 | Cache | Redis opsional untuk metadata Doodstream |
+| Object Storage | Backblaze B2 untuk thumbnail custom |
 | Runtime | Node.js 20 LTS |
 | Container | Docker + Docker Compose |
 
@@ -326,6 +334,14 @@ Untuk video dari Doodstream, database sebaiknya menyimpan:
 - `thumbnailUrl`
 
 Frontend player hanya membutuhkan `embedUrl` untuk render `iframe`.
+
+### Thumbnail Custom
+
+Aturan:
+- Upload thumbnail custom harus lewat backend, tidak langsung dari frontend ke Backblaze
+- Credential Backblaze tidak boleh dikirim ke browser atau response API
+- Jika thumbnail custom tersedia, backend boleh memakai URL itu untuk override thumbnail dari Doodstream
+- Validasi file thumbnail minimal harus membatasi tipe file gambar dan ukuran file
 
 ---
 
@@ -631,6 +647,7 @@ Aturan ini wajib diikuti:
 6. Selalu protect endpoint admin dengan `JwtAuthGuard`, `RolesGuard`, dan `@Roles('ADMIN')`
 7. Jangan pernah return `passwordHash` di response
 8. Jangan hardcode URL, port, credentials, atau secrets
+9. Jangan expose `BACKBLAZE_B2_KEY_ID`, `BACKBLAZE_B2_APPLICATION_KEY`, atau kredensial storage lain ke frontend
 
 ---
 
@@ -648,6 +665,8 @@ rtk proxy powershell -NoProfile -Command "docker compose logs -f backend fronten
 Aturan Docker:
 - Frontend production berjalan di Nginx dan harus mengakses API lewat path relatif `/api`, bukan hardcoded `http://localhost:3000/api`
 - Nginx frontend bertugas me-proxy `/api` ke service `backend` di network Docker
+- `postgres` boleh dipublish ke `127.0.0.1:5433` untuk local development backend yang berjalan di host
+- Publish `postgres` untuk local dev tidak boleh mengubah koneksi internal service Docker yang tetap memakai `postgres:5432`
 - Jangan ubah konfigurasi build production Angular sehingga `environment.prod.ts` tidak terpakai
 - Jika ada perubahan pada URL API frontend production, verifikasi `frontend/angular.json` masih memiliki `fileReplacements` untuk mode production
 - Jika ada perubahan Docker backend, verifikasi entrypoint cocok dengan output build NestJS yang aktual
@@ -664,6 +683,10 @@ rtk proxy powershell -NoProfile -Command "cd backend; npx prisma generate"
 rtk proxy powershell -NoProfile -Command "cd backend; npx prisma db seed"
 rtk proxy powershell -NoProfile -Command "cd backend; npx prisma studio"
 ```
+
+Catatan local dev backend:
+- Untuk backend yang dijalankan langsung dari host, `DATABASE_URL` default mengarah ke `postgresql://streamvid_user:streamvid_pass@localhost:5433/streamvid`
+- Untuk backend yang dijalankan sebagai container Docker Compose, koneksi database tetap memakai host internal `postgres:5432`
 
 ### Frontend
 

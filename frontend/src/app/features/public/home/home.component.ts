@@ -100,19 +100,13 @@ export class HomeComponent {
   }
 
   protected onCategorySelect(categoryId: string | null): void {
-    if (this.selectedCategory() === categoryId) {
+    if (this.selectedCategory() === categoryId && this.currentPage() === 1) {
       return;
     }
 
-    this.selectedCategory.set(categoryId);
-    this.currentPage.set(1);
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        categoryId: categoryId || null,
-        page: null,
-      },
-      queryParamsHandling: 'merge',
+    void this.updateFilters({
+      categoryId,
+      page: 1,
     });
   }
 
@@ -121,14 +115,7 @@ export class HomeComponent {
       return;
     }
 
-    this.currentPage.set(page);
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        page,
-      },
-      queryParamsHandling: 'merge',
-    });
+    void this.updateFilters({ page });
   }
 
   protected formatDuration(durationInSeconds: number | null | undefined): string {
@@ -160,14 +147,10 @@ export class HomeComponent {
   }
 
   protected clearFilters(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        categoryId: null,
-        search: null,
-        page: null,
-      },
-      queryParamsHandling: 'merge',
+    void this.updateFilters({
+      categoryId: null,
+      search: '',
+      page: 1,
     });
   }
 
@@ -241,5 +224,25 @@ export class HomeComponent {
     this.totalItems.set(response.total);
     this.currentPage.set(response.page);
     this.totalPages.set(Math.max(response.totalPages, 1));
+  }
+
+  private updateFilters(filters: {
+    categoryId?: string | null;
+    search?: string;
+    page?: number | null;
+  }): Promise<boolean> {
+    const categoryId = filters.categoryId === undefined ? this.selectedCategory() : filters.categoryId;
+    const search = filters.search ?? this.searchQuery();
+    const page = filters.page ?? this.currentPage();
+
+    return this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        categoryId,
+        search: search || null,
+        page: page <= 1 ? null : page,
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 }

@@ -8,6 +8,7 @@ import { VideosModule } from './modules/videos/videos.module';
 import { DoodstreamModule } from './modules/doodstream/doodstream.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { UsersModule } from './modules/users/users.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from './modules/users/users.module';
     VideosModule,
     DoodstreamModule,
     CategoriesModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

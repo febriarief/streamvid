@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import {
   LucideCheck,
   LucideEdit,
+  LucideImagePlus,
   LucideLoaderCircle,
   LucideTrash,
   LucideUpload,
@@ -46,6 +47,7 @@ type PaginationState = {
     DecimalPipe,
     LucideCheck,
     LucideEdit,
+    LucideImagePlus,
     LucideLoaderCircle,
     LucideTrash,
     LucideUpload,
@@ -67,10 +69,13 @@ export class VideoManagerComponent {
   protected readonly categories = signal<Category[]>([]);
   protected readonly tags = signal<string[]>([]);
   protected readonly isSaving = signal(false);
+  protected readonly isUploadingThumbnail = signal(false);
   protected readonly showDeleteModal = signal(false);
   protected readonly metadataError = signal('');
   protected readonly submitError = signal('');
   protected readonly listError = signal('');
+  protected readonly thumbnailError = signal('');
+  protected readonly thumbnailUrl = signal('');
   protected readonly pagination = signal<PaginationState>({
     page: 1,
     limit: 10,
@@ -105,7 +110,7 @@ export class VideoManagerComponent {
     this.showEditModal() ? 'Simpan Perubahan' : 'Simpan Video'
   );
   protected readonly selectedThumbnailUrl = computed(
-    () => this.selectedVideo()?.thumbnailUrl || null
+    () => this.thumbnailUrl() || this.selectedVideo()?.thumbnailUrl || null
   );
 
   constructor() {
@@ -157,6 +162,7 @@ export class VideoManagerComponent {
   protected openEditModal(video: Video): void {
     this.resetModalState();
     this.selectedVideo.set(video);
+    this.thumbnailUrl.set(video.thumbnailUrl ?? '');
     this.tags.set(video.tags.map((tag) => tag.name));
     this.form.reset({
       doodUrl: video.doodUrl,
@@ -226,6 +232,7 @@ export class VideoManagerComponent {
             category: this.selectedVideo()?.category ?? null,
             tags: this.selectedVideo()?.tags ?? [],
           });
+          this.thumbnailUrl.set(metadata.thumbnailUrl);
 
           this.form.patchValue({
             doodUrl: metadata.doodUrl,
@@ -235,6 +242,42 @@ export class VideoManagerComponent {
         },
         error: () => {
           this.metadataError.set('URL source video tidak valid atau metadata gagal diambil.');
+        },
+      });
+  }
+
+  protected uploadCustomThumbnail(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+
+    if (!file || this.isUploadingThumbnail()) {
+      if (input) {
+        input.value = '';
+      }
+      return;
+    }
+
+    this.thumbnailError.set('');
+    this.isUploadingThumbnail.set(true);
+
+    this.videoService
+      .uploadThumbnail(file)
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.isUploadingThumbnail.set(false);
+          if (input) {
+            input.value = '';
+          }
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.thumbnailUrl.set(response.url);
+          this.selectedVideo.update((video) => (video ? { ...video, thumbnailUrl: response.url } : video));
+        },
+        error: () => {
+          this.thumbnailError.set('Upload thumbnail gagal. Gunakan JPG, PNG, atau WEBP maksimal 5MB.');
         },
       });
   }
@@ -418,6 +461,7 @@ export class VideoManagerComponent {
       doodUrl: formValue.doodUrl.trim(),
       title: formValue.title.trim(),
       description: formValue.description.trim(),
+      thumbnailUrl: this.selectedThumbnailUrl() ?? undefined,
       categoryId: formValue.categoryId || undefined,
       tags: this.tags(),
       status: formValue.status,
@@ -430,6 +474,8 @@ export class VideoManagerComponent {
     this.tags.set([]);
     this.metadataError.set('');
     this.submitError.set('');
+    this.thumbnailError.set('');
+    this.thumbnailUrl.set('');
   }
 
   private getEditableStatus(status: VideoStatus): Exclude<VideoStatus, 'ARCHIVED'> {

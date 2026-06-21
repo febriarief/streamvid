@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DoodstreamService } from '../doodstream/doodstream.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { GetTrendingVideosDto } from './dto/get-trending-videos.dto';
@@ -11,8 +12,9 @@ import slugify from 'slugify';
 @Injectable()
 export class VideosService {
   constructor(
-    private prisma: PrismaService,
-    private doodstream: DoodstreamService,
+    private readonly prisma: PrismaService,
+    private readonly doodstream: DoodstreamService,
+    private readonly storageService: StorageService,
   ) {}
 
   private parsePositiveInt(value: number | string | undefined, fallback: number): number {
@@ -178,7 +180,7 @@ export class VideosService {
     const page = this.parsePositiveInt(query.page, 1);
     const limit = this.parsePositiveInt(query.limit, 20);
     const { status } = query;
-    const where: any = {};
+    const where: Prisma.VideoWhereInput = {};
     if (status) where.status = status;
 
     const [videos, total] = await Promise.all([
@@ -206,7 +208,7 @@ export class VideosService {
         doodFileId: metadata.doodFileId,
         doodUrl: metadata.doodUrl,
         embedUrl: metadata.embedUrl,
-        thumbnailUrl: metadata.thumbnailUrl,
+        thumbnailUrl: dto.thumbnailUrl ?? metadata.thumbnailUrl,
         duration: metadata.duration,
         status: dto.status ?? VideoStatus.DRAFT,
         categoryId: dto.categoryId ?? null,
@@ -234,6 +236,7 @@ export class VideosService {
       data: {
         title: dto.title,
         description: dto.description,
+        thumbnailUrl: dto.thumbnailUrl,
         status: dto.status,
         categoryId: dto.categoryId,
         tags: dto.tags?.length
@@ -278,5 +281,14 @@ export class VideosService {
       totalViews: totalViews._sum.viewCount ?? 0,
       totalUsers,
     };
+  }
+
+  async uploadThumbnail(file: {
+    buffer: Buffer;
+    mimetype: string;
+    originalname: string;
+    size: number;
+  }) {
+    return this.storageService.uploadThumbnail(file);
   }
 }
