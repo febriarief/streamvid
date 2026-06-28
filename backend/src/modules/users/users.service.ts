@@ -4,9 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../../../generated/prisma/client';
+import { Prisma, Role } from '../../../generated/prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AdminCreateUserDto } from './dto/admin-create-user.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
+import { ListUsersQueryDto } from './dto/list-users-query.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -18,6 +21,79 @@ export class UsersService {
     category: true,
     tags: true,
   } satisfies Prisma.VideoInclude;
+
+  private readonly userAdminSelect = {
+    id: true,
+    email: true,
+    username: true,
+    role: true,
+    avatar: true,
+    createdAt: true,
+    updatedAt: true,
+    _count: {
+      select: {
+        views: true,
+      },
+    },
+  } satisfies Prisma.UserSelect;
+
+  async findAllAdmin(query: ListUsersQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const search = query.search?.trim();
+    const where: Prisma.UserWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { username: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (query.role) {
+      where.role = query.role;
+    }
+
+    const [users, total] = await Promise.all([
+      this.prisma.db.user.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { username: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        select: this.userAdminSelect,
+      }),
+      this.prisma.db.user.count({ where }),
+    ]);
+
+    return {
+      users: users.map((user) => this.serializeAdminUser(user)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async createAdminUser(dto: AdminCreateUserDto) {
+    const email = dto.email.trim().toLowerCase();
+    const username = dto.username.trim();
+
+    await this.ensureEmailAndUsernameAvailable(email, username);
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    const user = await this.prisma.db.user.create({
+      data: {
+        email,
+        username,
+        passwordHash,
+        role: dto.role,
+      },
+      select: this.userAdminSelect,
+    });
+
+    return this.serializeAdminUser(user);
+  }
 
   async updateMe(userId: string, dto: UpdateProfileDto) {
     const user = await this.prisma.db.user.findUnique({
@@ -177,6 +253,77 @@ export class UsersService {
       .filter((item): item is NonNullable<typeof item> => item !== null);
   }
 
+  async updateAdminUser(actorUserId: string, userId: string, dto: AdminUpdateUserDto) {
+    const user = await this.prisma.db.user.findUnique({
+      where: { id: userId },
+      select: this.userAdminSelect,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const email = dto.email?.trim().toLowerCase();
+    const username = dto.username?.trim();
+
+    if (email || username) {
+      await this.ensureEmailAndUsernameAvailable(email, username, userId);
+    }
+
+    if (actorUserId === userId && dto.role && dto.role !== user.role) {
+      throw new BadRequestException('You cannot change your own role');
+    }
+
+    const updateData: Prisma.UserUpdateInput = {};
+
+    if (email) {
+      updateData.email = email;
+    }
+
+    if (username) {
+      updateData.username = username;
+    }
+
+    if (dto.role) {
+      updateData.role = dto.role;
+    }
+
+    if (dto.password?.trim()) {
+      updateData.passwordHash = await bcrypt.hash(dto.password, 12);
+    }
+
+    const updatedUser = await this.prisma.db.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: this.userAdminSelect,
+    });
+
+    return this.serializeAdminUser(updatedUser);
+  }
+
+  async remove(actorUserId: string, userId: string) {
+    if (actorUserId === userId) {
+      throw new BadRequestException('You cannot delete your own account');
+    }
+
+    const user = await this.prisma.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.db.user.delete({
+      where: { id: userId },
+    });
+
+    return { message: 'User deleted' };
+  }
+
   private serializeUser(user: {
     id: string;
     email: string;
@@ -190,6 +337,62 @@ export class UsersService {
       username: user.username,
       role: user.role,
       avatar: user.avatar ?? undefined,
+    };
+  }
+
+  private async ensureEmailAndUsernameAvailable(
+    email?: string,
+    username?: string,
+    excludeUserId?: string
+  ) {
+    if (!email && !username) {
+      return;
+    }
+
+    const existing = await this.prisma.db.user.findFirst({
+      where: {
+        OR: [
+          ...(email ? [{ email }] : []),
+          ...(username ? [{ username }] : []),
+        ],
+        ...(excludeUserId
+          ? {
+              NOT: { id: excludeUserId },
+            }
+          : {}),
+      },
+    });
+
+    if (!existing) {
+      return;
+    }
+
+    if (email && existing.email === email) {
+      throw new ConflictException('Email already taken');
+    }
+
+    if (username && existing.username === username) {
+      throw new ConflictException('Username already taken');
+    }
+  }
+
+  private serializeAdminUser(user: {
+    id: string;
+    email: string;
+    username: string;
+    role: Role;
+    avatar: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: {
+      views: number;
+    };
+  }) {
+    return {
+      ...this.serializeUser(user),
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      watchHistoryCount: user._count.views,
     };
   }
 }

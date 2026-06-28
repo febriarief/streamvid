@@ -1,0 +1,366 @@
+<section class="space-y-6">
+  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+    <div class="space-y-4">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">User Manager</h2>
+      <p class="mt-2 max-w-2xl text-sm text-gray-600 dark:text-zinc-400">
+        Kelola akun user StreamVid dari satu tempat dengan alur tambah, edit, dan hapus yang lebih rapi.
+      </p>
+
+      <div class="flex flex-col gap-3 xl:flex-row">
+        <div class="relative w-full xl:w-[320px]">
+          <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-500 dark:text-zinc-500">
+            <svg lucideSearch class="h-4 w-4" aria-hidden="true"></svg>
+          </span>
+          <input
+            type="search"
+            [formControl]="searchControl"
+            placeholder="Cari email atau username"
+            class="h-12 w-full rounded-2xl border border-zinc-300 bg-white px-12 pr-11 text-sm text-gray-900 outline-none transition duration-150 placeholder:text-zinc-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 dark:focus:border-cyan-400"
+          />
+          @if (searchQuery()) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              class="absolute inset-y-1.5 right-1.5 inline-flex cursor-pointer items-center justify-center rounded-xl px-3 text-xs font-medium text-zinc-500 transition duration-150 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+            >
+              Reset
+            </button>
+          }
+        </div>
+
+        <label class="w-full xl:w-[220px]">
+          <span class="sr-only">Filter role</span>
+          <select
+            [formControl]="roleControl"
+            class="h-12 w-full cursor-pointer rounded-2xl border border-zinc-300 bg-white px-4 text-sm text-gray-900 outline-none transition duration-150 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-cyan-400"
+          >
+            <option value="">Semua role</option>
+            <option value="ADMIN">Administrator</option>
+            <option value="USER">User</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition duration-150 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+      >
+        <svg lucideX class="h-4 w-4"></svg>
+        <span>Reset Filter</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="openCreateModal()"
+        class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_30px_rgba(6,182,212,0.22)] transition duration-150 hover:bg-cyan-400"
+      >
+        <svg lucidePlus class="h-4 w-4"></svg>
+        <span>Tambah User</span>
+      </button>
+    </div>
+  </div>
+
+  @if (listError()) {
+    <div class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+      {{ listError() }}
+    </div>
+  }
+
+  @if (actionError()) {
+    <div class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+      {{ actionError() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-200">
+      {{ successMessage() }}
+    </div>
+  }
+
+  <div class="overflow-hidden rounded-[24px] border border-zinc-200/70 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-900/70 dark:shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
+        <thead class="bg-zinc-50/80 dark:bg-zinc-950/70">
+          <tr class="text-left text-xs uppercase tracking-[0.22em] text-gray-500 dark:text-zinc-500">
+            <th class="px-5 py-4 font-medium">User</th>
+            <th class="px-5 py-4 font-medium">Role</th>
+            <th class="px-5 py-4 font-medium">History</th>
+            <th class="px-5 py-4 font-medium">Terdaftar</th>
+            <th class="px-5 py-4 font-medium">Aksi</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+          @if (isLoading()) {
+            @for (row of [1, 2, 3, 4]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-2xl bg-zinc-200 dark:bg-zinc-800"></div>
+                    <div class="space-y-3">
+                      <div class="h-4 w-32 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+                      <div class="h-3 w-40 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4"><div class="h-9 w-28 rounded-full bg-zinc-200 dark:bg-zinc-800"></div></td>
+                <td class="px-5 py-4"><div class="h-4 w-16 rounded-full bg-zinc-200 dark:bg-zinc-800"></div></td>
+                <td class="px-5 py-4"><div class="h-4 w-24 rounded-full bg-zinc-200 dark:bg-zinc-800"></div></td>
+                <td class="px-5 py-4"><div class="h-10 w-32 rounded-2xl bg-zinc-200 dark:bg-zinc-800"></div></td>
+              </tr>
+            }
+          } @else if (!hasUsers()) {
+            <tr>
+              <td colspan="5" class="px-5 py-14 text-center">
+                <div class="mx-auto max-w-md px-4 py-6 text-center">
+                  <img
+                    src="/empty-state/empty-data.png"
+                    alt="Belum ada user yang cocok"
+                    class="mx-auto w-full max-w-[220px] object-contain"
+                  />
+                  <h3 class="mt-5 text-[28px] font-semibold leading-tight text-white">User tidak ditemukan</h3>
+                  <p class="mt-3 text-sm leading-7 text-zinc-400">
+                    Coba ubah kata kunci pencarian atau filter role, atau tambahkan user baru dari panel ini.
+                  </p>
+                  <div class="mt-8 space-y-3">
+                    <button
+                      type="button"
+                      (click)="openCreateModal()"
+                      class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-linear-to-r from-violet-600 to-violet-500 px-4 py-3 text-sm font-medium text-white transition duration-150 hover:brightness-110"
+                    >
+                      Tambah User
+                    </button>
+                    <button
+                      type="button"
+                      (click)="clearFilters()"
+                      class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-zinc-700 bg-transparent px-4 py-3 text-sm font-medium text-zinc-200 transition duration-150 hover:border-zinc-500 hover:text-white"
+                    >
+                      Reset Filter
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          } @else {
+            @for (user of users(); track user.id) {
+              <tr class="align-top">
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-400/20 bg-linear-to-br from-violet-500/15 to-cyan-500/15 text-violet-200">
+                      @if (user.avatar) {
+                        <img [src]="user.avatar" [alt]="user.username" class="h-full w-full rounded-2xl object-cover" />
+                      } @else {
+                        <svg lucideUsers class="h-5 w-5"></svg>
+                      }
+                    </div>
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ user.username }}</p>
+                      <p class="truncate text-xs text-gray-500 dark:text-zinc-500">{{ user.email }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold"
+                    [class]="getRoleBadgeClasses(user.role)"
+                  >
+                    {{ getRoleLabel(user.role) }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-zinc-300">
+                  {{ user.watchHistoryCount }}
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-zinc-300">
+                  {{ user.createdAt | date: 'dd MMM yyyy' }}
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      (click)="openEditModal(user)"
+                      [disabled]="isSaving()"
+                      class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition duration-150 hover:bg-violet-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <svg lucidePencil class="h-3.5 w-3.5"></svg>
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      (click)="askDelete(user)"
+                      [disabled]="isSaving()"
+                      class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition duration-150 hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <svg lucideTrash class="h-3.5 w-3.5"></svg>
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      [currentPage]="pagination().page"
+      [totalPages]="pagination().totalPages"
+      [totalItems]="pagination().total"
+      [visibleItems]="users().length"
+      itemLabel="user"
+      (pageChange)="goToPage($event)"
+    />
+  </div>
+</section>
+
+@if (showUserModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-[32px] border border-zinc-800 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.28)] dark:bg-zinc-900 dark:shadow-[0_24px_60px_rgba(0,0,0,.45)]">
+      <div class="flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-5 dark:border-zinc-800">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-[0.28em] text-violet-400">{{ modalEyebrow() }}</p>
+          <h3 class="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">{{ modalTitle() }}</h3>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeUserModal()"
+          class="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 text-zinc-500 transition duration-150 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:text-white"
+          aria-label="Close modal"
+        >
+          <svg lucideX class="h-4 w-4"></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="form" class="space-y-6 px-6 py-6" (ngSubmit)="saveUser()">
+        <div class="grid gap-5 md:grid-cols-2">
+          <div class="rounded-[28px] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/80">
+            <label for="userEmail" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Email</label>
+            <input
+              id="userEmail"
+              type="email"
+              formControlName="email"
+              placeholder="nama@email.com"
+              class="mt-3 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-cyan-400"
+            />
+            @if (emailError) {
+              <p class="mt-3 text-xs text-red-400">{{ emailError }}</p>
+            }
+          </div>
+
+          <div class="rounded-[28px] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/80">
+            <label for="userUsername" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Username</label>
+            <input
+              id="userUsername"
+              type="text"
+              formControlName="username"
+              placeholder="Masukkan username"
+              class="mt-3 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-cyan-400"
+            />
+            @if (usernameError) {
+              <p class="mt-3 text-xs text-red-400">{{ usernameError }}</p>
+            }
+          </div>
+
+          <div class="rounded-[28px] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/80">
+            <label for="userRole" class="text-sm font-medium text-gray-700 dark:text-zinc-200">Role</label>
+            <select
+              id="userRole"
+              formControlName="role"
+              class="mt-3 w-full cursor-pointer rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-cyan-400"
+            >
+              <option value="USER">User</option>
+              <option value="ADMIN">Administrator</option>
+            </select>
+          </div>
+
+          <div class="rounded-[28px] border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/80">
+            <label for="userPassword" class="text-sm font-medium text-gray-700 dark:text-zinc-200">
+              {{ isEditing() ? 'Password Baru (opsional)' : 'Password' }}
+            </label>
+            <input
+              id="userPassword"
+              type="password"
+              formControlName="password"
+              [placeholder]="isEditing() ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter'"
+              class="mt-3 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition duration-150 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:focus:border-cyan-400"
+            />
+            @if (passwordError) {
+              <p class="mt-3 text-xs text-red-400">{{ passwordError }}</p>
+            }
+          </div>
+        </div>
+
+        @if (actionError()) {
+          <div class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {{ actionError() }}
+          </div>
+        }
+
+        <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-800 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeUserModal()"
+            class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition duration-150 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            [disabled]="isSaving()"
+            class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-violet-500 px-5 py-3 text-sm font-semibold text-white transition duration-150 hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            @if (isSaving()) {
+              <svg lucideLoaderCircle class="h-4 w-4 animate-spin"></svg>
+            } @else if (isEditing()) {
+              <svg lucidePencil class="h-4 w-4"></svg>
+            } @else {
+              <svg lucidePlus class="h-4 w-4"></svg>
+            }
+            <span>{{ submitLabel() }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (userToDelete()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-[28px] border border-zinc-800 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.28)] dark:bg-zinc-900 dark:shadow-[0_24px_60px_rgba(0,0,0,.45)]">
+      <p class="text-xs font-medium uppercase tracking-[0.28em] text-red-400">Konfirmasi Hapus</p>
+      <h3 class="mt-3 text-2xl font-semibold text-gray-900 dark:text-white">Hapus akun ini?</h3>
+      <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-zinc-400">
+        Akun <span class="font-semibold text-gray-900 dark:text-white">{{ userToDelete()?.username }}</span> akan dihapus dari sistem StreamVid.
+      </p>
+
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="cancelDelete()"
+          class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition duration-150 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="isSaving()"
+          class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-300 transition duration-150 hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (isSaving()) {
+            <svg lucideLoaderCircle class="h-4 w-4 animate-spin"></svg>
+          } @else {
+            <svg lucideTrash class="h-4 w-4"></svg>
+          }
+          <span>Hapus User</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

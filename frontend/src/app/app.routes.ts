@@ -82,6 +82,12 @@ export const routes: Routes = [
           .then(m => m.CategoryManagerComponent),
       },
       {
+        path: 'users',
+        title: 'Manajemen User',
+        loadComponent: () => import('./features/admin/user-manager/user-manager.component')
+          .then(m => m.UserManagerComponent),
+      },
+      {
         path: 'profile',
         title: 'Profile Admin',
         loadComponent: () => import('./features/admin/profile/profile.component')

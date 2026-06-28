@@ -8,6 +8,7 @@ import {
   LucideLogOut,
   LucideMenu,
   LucideUser,
+  LucideUsers,
   LucideVideo,
 } from '@lucide/angular';
 import { logout } from '../../core/auth/auth.actions';
@@ -17,7 +18,7 @@ type AdminNavItem = {
   label: string;
   path: string;
   exact?: boolean;
-  icon: 'dashboard' | 'video' | 'category' | 'profile';
+  icon: 'dashboard' | 'video' | 'category' | 'users' | 'profile';
 };
 
 @Component({
@@ -33,6 +34,7 @@ type AdminNavItem = {
     LucideLogOut,
     LucideMenu,
     LucideUser,
+    LucideUsers,
     LucideVideo,
   ],
   templateUrl: './admin-layout.component.html',
@@ -51,6 +53,7 @@ export class AdminLayoutComponent {
     { label: 'Categories', path: '/admin/categories', icon: 'category' },
     { label: 'Videos', path: '/admin/videos', icon: 'video' },
     { label: 'Profile', path: '/admin/profile', icon: 'profile' },
+    { label: 'Users', path: '/admin/users', icon: 'users' },
   ];
 
   protected toggleSidebar(): void {
