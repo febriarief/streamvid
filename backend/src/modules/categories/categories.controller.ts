@@ -23,7 +23,7 @@ export class CategoriesAdminController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  findAll(@Query() query: { page?: number | string; limit?: number | string }) {
+  findAll(@Query() query: { page?: number | string; limit?: number | string; search?: string }) {
     return this.categoriesService.findAllAdmin(query);
   }
 

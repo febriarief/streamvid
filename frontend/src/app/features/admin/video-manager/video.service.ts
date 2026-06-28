@@ -74,10 +74,21 @@ export class VideoService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  getVideos(page: number, limit: number): Observable<VideoListResponse> {
+  getVideos(
+    page: number,
+    limit: number,
+    filters?: {
+      search?: string;
+      categoryId?: string | null;
+      status?: VideoStatus | '';
+    }
+  ): Observable<VideoListResponse> {
     const params = new HttpParams()
       .set('page', page)
-      .set('limit', limit);
+      .set('limit', limit)
+      .set('search', filters?.search?.trim() ?? '')
+      .set('categoryId', filters?.categoryId ?? '')
+      .set('status', filters?.status ?? '');
 
     return this.http
       .get<ApiEnvelope<VideoListResponse>>(`${this.apiUrl}/admin/videos`, { params })

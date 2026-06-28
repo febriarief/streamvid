@@ -4,11 +4,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
-  LucideChevronLeft,
-  LucideChevronRight,
   LucideSearch,
 } from '@lucide/angular';
 import { finalize, forkJoin, take } from 'rxjs';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { Category, ExploreService, ExploreSort, Video } from './explore.service';
 
 @Component({
@@ -20,8 +19,7 @@ import { Category, ExploreService, ExploreSort, Video } from './explore.service'
     RouterLink,
     DatePipe,
     LucideSearch,
-    LucideChevronLeft,
-    LucideChevronRight,
+    PaginationComponent,
   ],
   providers: [ExploreService],
   templateUrl: './explore.component.html',
@@ -69,24 +67,6 @@ export class ExploreComponent {
 
     return '/empty-state/empty-video.png';
   });
-  protected readonly visiblePages = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
-
-    if (total <= 5) {
-      return Array.from({ length: total }, (_, index) => index + 1);
-    }
-
-    let start = Math.max(current - 2, 1);
-    let end = Math.min(start + 4, total);
-
-    if (end - start < 4) {
-      start = Math.max(end - 4, 1);
-    }
-
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  });
-
   constructor() {
     this.bindRouteState();
     this.loadInitialData();

@@ -467,6 +467,13 @@ features/admin/video-upload/
 `-- video-upload.component.spec.ts
 ```
 
+Komponen UI yang dipakai lintas halaman harus diletakkan di `frontend/src/app/shared/components/`.
+
+Aturan khusus pagination:
+- Gunakan shared pagination component untuk semua halaman yang memiliki pagination
+- Jangan menulis ulang markup atau logic pagination langsung di template halaman
+- Referensi visual dan perilaku pagination mengikuti pola pagination di halaman publik/user
+
 ### Naming
 
 | Item | Convention | Contoh |

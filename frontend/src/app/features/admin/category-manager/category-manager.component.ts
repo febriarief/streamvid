@@ -1,14 +1,16 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideLoaderCircle,
   LucidePlus,
+  LucideSearch,
   LucideTrash,
   LucideX,
 } from '@lucide/angular';
-import { finalize, take } from 'rxjs/operators';
-import { AdminPaginationComponent } from '../../../shared/components/admin-pagination/admin-pagination.component';
+import { debounceTime, distinctUntilChanged, finalize, take } from 'rxjs/operators';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { Category, CategoryService } from './category.service';
 
 type PaginationState = {
@@ -31,15 +33,17 @@ type CategoryForm = FormGroup<{
     DatePipe,
     LucideLoaderCircle,
     LucidePlus,
+    LucideSearch,
     LucideTrash,
     LucideX,
-    AdminPaginationComponent,
+    PaginationComponent,
   ],
   templateUrl: './category-manager.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CategoryManagerComponent {
   private readonly categoryService = inject(CategoryService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly categories = signal<Category[]>([]);
   protected readonly isLoading = signal(false);
@@ -48,6 +52,8 @@ export class CategoryManagerComponent {
   protected readonly submitError = signal('');
   protected readonly categoryToDelete = signal<Category | null>(null);
   protected readonly showCreateModal = signal(false);
+  protected readonly searchQuery = signal('');
+  protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly pagination = signal<PaginationState>({
     page: 1,
     limit: 10,
@@ -65,6 +71,7 @@ export class CategoryManagerComponent {
   protected readonly hasCategories = computed(() => this.categories().length > 0);
 
   constructor() {
+    this.bindSearch();
     this.loadCategories();
   }
 
@@ -85,7 +92,7 @@ export class CategoryManagerComponent {
     this.listError.set('');
 
     this.categoryService
-      .getCategories(page, this.pagination().limit)
+      .getCategories(page, this.pagination().limit, this.searchQuery())
       .pipe(
         take(1),
         finalize(() => this.isLoading.set(false))
@@ -168,11 +175,38 @@ export class CategoryManagerComponent {
     this.loadCategories(page);
   }
 
+  protected clearSearch(): void {
+    if (!this.searchQuery()) {
+      return;
+    }
+
+    this.searchControl.setValue('');
+  }
+
   protected get nameError(): string {
     if (!this.nameControl.invalid || (!this.nameControl.touched && !this.nameControl.dirty)) {
       return '';
     }
 
     return 'Nama kategori wajib diisi.';
+  }
+
+  private bindSearch(): void {
+    this.searchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => {
+        const nextSearch = value.trim();
+
+        if (nextSearch === this.searchQuery()) {
+          return;
+        }
+
+        this.searchQuery.set(nextSearch);
+        this.loadCategories(1);
+      });
   }
 }

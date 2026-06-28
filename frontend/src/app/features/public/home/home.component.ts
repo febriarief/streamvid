@@ -2,11 +2,8 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import {
-  LucideChevronLeft,
-  LucideChevronRight,
-} from '@lucide/angular';
 import { finalize, forkJoin, take } from 'rxjs';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { Category, Video, VideoService } from './video.service';
 
 @Component({
@@ -16,8 +13,7 @@ import { Category, Video, VideoService } from './video.service';
     CommonModule,
     RouterLink,
     DatePipe,
-    LucideChevronLeft,
-    LucideChevronRight,
+    PaginationComponent,
   ],
   templateUrl: './home.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,24 +72,6 @@ export class HomeComponent {
 
     return 'Video yang sudah dipublish akan muncul di sini. Katalog utama StreamVid sedang disiapkan.';
   });
-  protected readonly visiblePages = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
-
-    if (total <= 5) {
-      return Array.from({ length: total }, (_, index) => index + 1);
-    }
-
-    let start = Math.max(current - 2, 1);
-    let end = Math.min(start + 4, total);
-
-    if (end - start < 4) {
-      start = Math.max(end - 4, 1);
-    }
-
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  });
-
   constructor() {
     this.bindRouteState();
     this.loadInitialData();

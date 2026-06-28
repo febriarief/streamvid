@@ -1,3 +1,4 @@
+import { Prisma } from '../../../generated/prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import slugify from 'slugify';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -24,17 +25,26 @@ export class CategoriesService {
     });
   }
 
-  async findAllAdmin(query: { page?: number | string; limit?: number | string }) {
+  async findAllAdmin(query: { page?: number | string; limit?: number | string; search?: string }) {
     const page = this.parsePositiveInt(query.page, 1);
     const limit = this.parsePositiveInt(query.limit, 10);
+    const where: Prisma.CategoryWhereInput = {};
+
+    if (query.search?.trim()) {
+      where.OR = [
+        { name: { contains: query.search.trim(), mode: 'insensitive' } },
+        { slug: { contains: query.search.trim(), mode: 'insensitive' } },
+      ];
+    }
 
     const [categories, total] = await Promise.all([
       this.prisma.db.category.findMany({
+        where,
         orderBy: { name: 'asc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.db.category.count(),
+      this.prisma.db.category.count({ where }),
     ]);
 
     return {

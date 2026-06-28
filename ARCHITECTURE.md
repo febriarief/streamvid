@@ -75,6 +75,8 @@ HTTP Request
 - Template **tidak boleh** berisi logic kompleks — pindahkan ke component atau service
 - Service yang berhubungan dengan auth ada di `core/auth/`
 - Service yang berhubungan dengan fitur ada di folder fiturnya masing-masing
+- Komponen UI yang dipakai lebih dari satu halaman harus dipusatkan di `frontend/src/app/shared/components/`
+- Pagination adalah shared UI; semua halaman berpaginasi wajib memakai shared component yang sama
 
 ---
 

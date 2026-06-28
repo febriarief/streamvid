@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -25,14 +25,14 @@ export class CategoryService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  getCategories(page: number, limit: number): Observable<CategoryListResponse> {
+  getCategories(page: number, limit: number, search?: string): Observable<CategoryListResponse> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('limit', limit)
+      .set('search', search?.trim() ?? '');
+
     return this.http
-      .get<ApiEnvelope<CategoryListResponse>>(`${this.apiUrl}/admin/categories`, {
-        params: {
-          page,
-          limit,
-        },
-      })
+      .get<ApiEnvelope<CategoryListResponse>>(`${this.apiUrl}/admin/categories`, { params })
       .pipe(map((response) => this.unwrap(response)));
   }
 

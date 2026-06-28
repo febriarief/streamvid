@@ -1,11 +1,31 @@
 <section class="space-y-6">
-  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-    <div>
-      <p class="text-xs font-medium uppercase tracking-[0.28em] text-cyan-400">Admin Workspace</p>
-      <h2 class="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Category Manager</h2>
+  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+    <div class="space-y-4">
+      <h2 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Category Manager</h2>
       <p class="mt-2 max-w-2xl text-sm text-gray-600 dark:text-zinc-400">
         Kelola kategori untuk membantu katalog video StreamVid tetap rapi dan mudah dijelajahi.
       </p>
+
+      <div class="relative w-full xl:w-[320px]">
+        <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-zinc-500 dark:text-zinc-500">
+          <svg lucideSearch class="h-4 w-4" aria-hidden="true"></svg>
+        </span>
+        <input
+          type="search"
+          [formControl]="searchControl"
+          placeholder="Cari nama atau slug kategori"
+          class="h-12 w-full rounded-2xl border border-zinc-300 bg-white px-12 pr-11 text-sm text-gray-900 outline-none transition duration-150 placeholder:text-zinc-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white dark:placeholder:text-zinc-500 dark:focus:border-cyan-400"
+        />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            (click)="clearSearch()"
+            class="absolute inset-y-1.5 right-1.5 inline-flex cursor-pointer items-center justify-center rounded-xl px-3 text-xs font-medium text-zinc-500 transition duration-150 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+          >
+            Reset
+          </button>
+        }
+      </div>
     </div>
 
     <button
@@ -101,7 +121,7 @@
       </table>
     </div>
 
-    <app-admin-pagination
+    <app-pagination
       [currentPage]="pagination().page"
       [totalPages]="pagination().totalPages"
       [totalItems]="pagination().total"

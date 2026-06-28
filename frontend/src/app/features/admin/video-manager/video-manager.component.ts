@@ -1,17 +1,19 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LucideCheck,
   LucideEdit,
   LucideImagePlus,
   LucideLoaderCircle,
+  LucideSearch,
   LucideTrash,
   LucideUpload,
   LucideX,
 } from '@lucide/angular';
-import { finalize, take } from 'rxjs/operators';
-import { AdminPaginationComponent } from '../../../shared/components/admin-pagination/admin-pagination.component';
+import { debounceTime, distinctUntilChanged, finalize, take } from 'rxjs/operators';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import {
   Category,
   SaveVideoPayload,
@@ -49,16 +51,18 @@ type PaginationState = {
     LucideEdit,
     LucideImagePlus,
     LucideLoaderCircle,
+    LucideSearch,
     LucideTrash,
     LucideUpload,
     LucideX,
-    AdminPaginationComponent,
+    PaginationComponent,
   ],
   templateUrl: './video-manager.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VideoManagerComponent {
   private readonly videoService = inject(VideoService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly videos = signal<Video[]>([]);
   protected readonly isLoading = signal(false);
@@ -76,6 +80,10 @@ export class VideoManagerComponent {
   protected readonly listError = signal('');
   protected readonly thumbnailError = signal('');
   protected readonly thumbnailUrl = signal('');
+  protected readonly searchQuery = signal('');
+  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly selectedCategoryId = signal<string | null>(null);
+  protected readonly selectedStatus = signal<VideoStatus | ''>('');
   protected readonly pagination = signal<PaginationState>({
     page: 1,
     limit: 10,
@@ -114,6 +122,7 @@ export class VideoManagerComponent {
   );
 
   constructor() {
+    this.bindSearch();
     this.loadCategories();
     this.loadVideos();
   }
@@ -123,7 +132,11 @@ export class VideoManagerComponent {
     this.listError.set('');
 
     this.videoService
-      .getVideos(page, this.pagination().limit)
+      .getVideos(page, this.pagination().limit, {
+        search: this.searchQuery(),
+        categoryId: this.selectedCategoryId(),
+        status: this.selectedStatus(),
+      })
       .pipe(
         take(1),
         finalize(() => this.isLoading.set(false))
@@ -323,6 +336,7 @@ export class VideoManagerComponent {
         ? this.videoService.updateVideo(selectedVideo.id, {
             title: payload.title,
             description: payload.description,
+            thumbnailUrl: payload.thumbnailUrl,
             categoryId: payload.categoryId,
             tags: payload.tags,
             status: payload.status,
@@ -394,6 +408,49 @@ export class VideoManagerComponent {
     this.loadVideos(page);
   }
 
+  protected clearSearch(): void {
+    if (!this.searchQuery()) {
+      return;
+    }
+
+    this.searchControl.setValue('');
+  }
+
+  protected onCategoryFilterChange(categoryId: string): void {
+    const nextCategoryId = categoryId || null;
+
+    if (nextCategoryId === this.selectedCategoryId()) {
+      return;
+    }
+
+    this.selectedCategoryId.set(nextCategoryId);
+    this.loadVideos(1);
+  }
+
+  protected onStatusFilterChange(status: string): void {
+    const nextStatus = this.isVideoStatus(status) ? status : '';
+
+    if (nextStatus === this.selectedStatus()) {
+      return;
+    }
+
+    this.selectedStatus.set(nextStatus);
+    this.loadVideos(1);
+  }
+
+  protected resetFilters(): void {
+    const hasFilter =
+      Boolean(this.searchQuery()) || Boolean(this.selectedCategoryId()) || Boolean(this.selectedStatus());
+
+    if (!hasFilter) {
+      return;
+    }
+
+    this.selectedCategoryId.set(null);
+    this.selectedStatus.set('');
+    this.searchControl.setValue('');
+  }
+
   protected trackByVideoId(_: number, video: Video): string {
     return video.id;
   }
@@ -454,6 +511,25 @@ export class VideoManagerComponent {
       });
   }
 
+  private bindSearch(): void {
+    this.searchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => {
+        const nextSearch = value.trim();
+
+        if (nextSearch === this.searchQuery()) {
+          return;
+        }
+
+        this.searchQuery.set(nextSearch);
+        this.loadVideos(1);
+      });
+  }
+
   private buildPayload(): SaveVideoPayload {
     const formValue = this.form.getRawValue();
 
@@ -476,6 +552,10 @@ export class VideoManagerComponent {
     this.submitError.set('');
     this.thumbnailError.set('');
     this.thumbnailUrl.set('');
+  }
+
+  private isVideoStatus(value: string): value is VideoStatus {
+    return value === 'DRAFT' || value === 'PUBLISHED' || value === 'UNLISTED' || value === 'ARCHIVED';
   }
 
   private getEditableStatus(status: VideoStatus): Exclude<VideoStatus, 'ARCHIVED'> {

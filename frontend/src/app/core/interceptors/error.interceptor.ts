@@ -14,8 +14,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err) => {
-      const isRefreshRequest = req.url.endsWith('/auth/refresh');
-      const shouldTryRefresh = err.status === 401 && !isRefreshRequest;
+      const isAuthFlowRequest =
+        req.url.endsWith('/auth/login') ||
+        req.url.endsWith('/auth/register') ||
+        req.url.endsWith('/auth/refresh');
+      const shouldTryRefresh = err.status === 401 && !isAuthFlowRequest;
 
       if (shouldTryRefresh) {
         return authService.refresh().pipe(
@@ -31,7 +34,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           catchError((refreshErr) => {
             store.dispatch(AuthActions.restoreSessionFailure());
             void router.navigate(['/login']);
-            return throwError(() => refreshErr);
+            return throwError(() => err);
           })
         );
       }

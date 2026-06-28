@@ -77,7 +77,13 @@ export class VideosAdminController {
   }
 
   @Get('videos')
-  findAll(@Query() query: { page?: number; limit?: number; status?: VideoStatus }) {
+  findAll(@Query() query: {
+    page?: number;
+    limit?: number;
+    status?: VideoStatus;
+    search?: string;
+    categoryId?: string;
+  }) {
     return this.videosService.findAllAdmin(query);
   }
 

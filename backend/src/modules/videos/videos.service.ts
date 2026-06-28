@@ -176,12 +176,25 @@ export class VideosService {
 
   // ─── Admin ────────────────────────────────────────────────
 
-  async findAllAdmin(query: { page?: number | string; limit?: number | string; status?: VideoStatus }) {
+  async findAllAdmin(query: {
+    page?: number | string;
+    limit?: number | string;
+    status?: VideoStatus;
+    search?: string;
+    categoryId?: string;
+  }) {
     const page = this.parsePositiveInt(query.page, 1);
     const limit = this.parsePositiveInt(query.limit, 20);
-    const { status } = query;
+    const { categoryId, search, status } = query;
     const where: Prisma.VideoWhereInput = {};
     if (status) where.status = status;
+    if (categoryId?.trim()) where.categoryId = categoryId.trim();
+    if (search?.trim()) {
+      where.OR = [
+        { title: { contains: search.trim(), mode: 'insensitive' } },
+        { slug: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
 
     const [videos, total] = await Promise.all([
       this.prisma.db.video.findMany({
