@@ -405,6 +405,7 @@ export class VideoManagerComponent {
       return;
     }
 
+    this.scrollToTop();
     this.loadVideos(page);
   }
 
@@ -460,9 +461,16 @@ export class VideoManagerComponent {
       return '00:00';
     }
 
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const totalSeconds = Math.floor(duration);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return [hours, minutes, seconds].map((value) => value.toString().padStart(2, '0')).join(':');
+    }
+
+    return [minutes, seconds].map((value) => value.toString().padStart(2, '0')).join(':');
   }
 
   protected getStatusLabel(status: VideoStatus): string {
@@ -542,6 +550,15 @@ export class VideoManagerComponent {
       tags: this.tags(),
       status: formValue.status,
     };
+  }
+
+  private scrollToTop(): void {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    });
   }
 
   private resetModalState(): void {

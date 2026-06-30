@@ -156,6 +156,7 @@ export class MainLayoutComponent {
         this.currentUrl.set(event.urlAfterRedirects);
         this.closeUserMenu();
         this.closeSidebar();
+        this.scrollToTop();
 
         const search = this.router.routerState.snapshot.root.queryParamMap.get('search') ?? '';
 
@@ -166,6 +167,15 @@ export class MainLayoutComponent {
 
     const initialSearch = this.router.routerState.snapshot.root.queryParamMap.get('search') ?? '';
     this.searchControl.setValue(initialSearch, { emitEvent: false });
+  }
+
+  private scrollToTop(): void {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    });
   }
 
   protected isNavActive(item: NavItem): boolean {
