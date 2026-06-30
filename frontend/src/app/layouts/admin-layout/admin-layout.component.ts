@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   LucideArrowLeft,
   LucideFolderTree,
@@ -11,6 +12,7 @@ import {
   LucideUsers,
   LucideVideo,
 } from '@lucide/angular';
+import { filter } from 'rxjs/operators';
 import { logout } from '../../core/auth/auth.actions';
 import { selectUser } from '../../core/auth/auth.selectors';
 
@@ -42,6 +44,8 @@ type AdminNavItem = {
 })
 export class AdminLayoutComponent {
   private readonly store = inject(Store);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly isSidebarCollapsed = signal(false);
   protected readonly user = this.store.selectSignal(selectUser);
@@ -56,11 +60,31 @@ export class AdminLayoutComponent {
     { label: 'Users', path: '/admin/users', icon: 'users' },
   ];
 
+  constructor() {
+    this.bindNavigationScrollReset();
+  }
+
   protected toggleSidebar(): void {
     this.isSidebarCollapsed.update((value) => !value);
   }
 
   protected logout(): void {
     this.store.dispatch(logout());
+  }
+
+  private bindNavigationScrollReset(): void {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        window.requestAnimationFrame(() => {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+          });
+        });
+      });
   }
 }
